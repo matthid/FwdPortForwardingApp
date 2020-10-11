@@ -25,10 +25,10 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.PowerManager;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.TaskStackBuilder;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.TaskStackBuilder;
+import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.net.Inet4Address;
@@ -81,7 +81,7 @@ public class ForwardingService extends IntentService {
     public static final String PORT_FORWARD_SERVICE_ERROR_MESSAGE =
             "com.elixsr.portforwarder.forwarding.ForwardingService.PORT_FORWARD_ERROR_MESSAGE";
 
-    private static final String PORT_FORWARD_SERVICE_WAKE_LOCK_TAG = "PortForwardServiceWakeLockTag";
+    private static final String PORT_FORWARD_SERVICE_WAKE_LOCK_TAG = "PortForwardService:WakeLockTag";
 
     private static final String TAG = "ForwardingService";
 
@@ -193,29 +193,37 @@ public class ForwardingService extends IntentService {
                 break;
             }
 
-            try {
-                from = generateFromIpUsingInterface(ruleModel.getFromInterfaceName(), ruleModel.getFromPort());
+            int maxPort = ruleModel.getFromPortMax();
+            if (maxPort == 0) {
+                maxPort = ruleModel.getFromPortMin();
+            }
+            int minPort = ruleModel.getFromPortMin();
+            for (int currentPort = minPort; currentPort <= maxPort; currentPort++) {
+                int offset = currentPort - minPort;
+                try {
+                    from = generateFromIpUsingInterface(ruleModel.getFromInterfaceName(), currentPort);
 
-                if (ruleModel.isTcp() && runService) {
-                    ruleModelForwarders.add(new TcpForwarder(from, ruleModel.getTarget(), ruleModel.getName()));
-                    remainingFutures++;
+                    if (ruleModel.isTcp() && runService) {
+                        ruleModelForwarders.add(new TcpForwarder(from, ruleModel.getTarget(offset), ruleModel.getName()));
+                        remainingFutures++;
+                    }
+
+                    if (ruleModel.isUdp() && runService) {
+                        ruleModelForwarders.add(new UdpForwarder(from, ruleModel.getTarget(offset), ruleModel.getName()));
+                        remainingFutures++;
+                    }
+
+                } catch (SocketException | ObjectNotFoundException e) {
+                    Log.e(TAG, "Error generating IP Address for FROM interface with rule '" + ruleModel.getName() + "'", e);
+
+                    // graceful UI Exception handling - broadcast this to ui - it will deal with display something to the user e.g. a Toast
+                    localIntent =
+                            new Intent(BROADCAST_ACTION)
+                                    // Puts the status into the Intent
+                                    .putExtra(PORT_FORWARD_SERVICE_ERROR_MESSAGE, getString(R.string.start_rule_error_message) + " '" + ruleModel.getName() + "'");
+                    // Broadcasts the Intent to receivers in this app.
+                    LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
                 }
-
-                if (ruleModel.isUdp() && runService) {
-                    ruleModelForwarders.add(new UdpForwarder(from, ruleModel.getTarget(), ruleModel.getName()));
-                    remainingFutures++;
-                }
-
-            } catch (SocketException | ObjectNotFoundException e) {
-                Log.e(TAG, "Error generating IP Address for FROM interface with rule '" + ruleModel.getName() + "'", e);
-
-                // graceful UI Exception handling - broadcast this to ui - it will deal with display something to the user e.g. a Toast
-                localIntent =
-                        new Intent(BROADCAST_ACTION)
-                                // Puts the status into the Intent
-                                .putExtra(PORT_FORWARD_SERVICE_ERROR_MESSAGE, getString(R.string.start_rule_error_message) + " '" + ruleModel.getName() + "'");
-                // Broadcasts the Intent to receivers in this app.
-                LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
             }
         }
 
@@ -285,9 +293,9 @@ public class ForwardingService extends IntentService {
 
                     InetAddress inetAddress = enumIpAddr.nextElement();
 
-                    address = new String(inetAddress.getHostAddress().toString());
+                    address = inetAddress.getHostAddress();
 
-                    if (address != null & address.length() > 0 && inetAddress instanceof Inet4Address) {
+                    if (address != null && address.length() > 0 && inetAddress instanceof Inet4Address) {
 
                         inetSocketAddress = new InetSocketAddress(address, port);
                         return inetSocketAddress;

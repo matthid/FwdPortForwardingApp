@@ -19,8 +19,8 @@
 package com.elixsr.portforwarder.ui.rules;
 
 import android.content.Intent;
-import android.support.design.widget.TextInputEditText;
-import android.support.design.widget.TextInputLayout;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
@@ -36,9 +36,7 @@ import com.elixsr.portforwarder.models.RuleModel;
 import com.elixsr.portforwarder.ui.BaseActivity;
 import com.elixsr.portforwarder.ui.MainActivity;
 import com.elixsr.portforwarder.util.InterfaceHelper;
-import com.elixsr.portforwarder.util.IpAddressValidator;
 import com.elixsr.portforwarder.util.NetworkHelper;
-import com.elixsr.portforwarder.util.RuleHelper;
 import com.elixsr.portforwarder.validators.RuleModelValidator;
 
 /**
@@ -151,11 +149,11 @@ public abstract class BaseRuleActivity extends BaseActivity {
      *
      * @return a {@link RuleModel} object as a result of the users input.
      */
-    public RuleModel generateNewRule() {
+    public RuleModel generateNewRule(long ruleModelId) {
 
         // Create the blank rule object
         RuleModel ruleModel = new RuleModel();
-
+        ruleModel.setId(ruleModelId);
 
         /*
             Protocol
@@ -202,15 +200,33 @@ public abstract class BaseRuleActivity extends BaseActivity {
         /*
             From port
          */
-        TextInputEditText fromPortText = (TextInputEditText) findViewById(R.id.new_rule_from_port);
+        TextInputEditText fromPortMinText = (TextInputEditText) findViewById(R.id.new_rule_from_port_min);
 
         // Validate the input, and show error message if wrong
         try {
-            if (RuleModelValidator.validateRuleFromPort(fromPortText.getText().toString())) {
-                ruleModel.setFromPort(Integer.valueOf(fromPortText.getText().toString()));
+            if (RuleModelValidator.validateRuleFromPort(fromPortMinText.getText().toString())) {
+                ruleModel.setFromPortMin(Integer.valueOf(fromPortMinText.getText().toString()));
             }
         } catch (RuleValidationException e) {
-            fromPortText.setError(e.getMessage());
+            fromPortMinText.setError(e.getMessage());
+        }
+
+        TextInputEditText fromPortMaxText = (TextInputEditText) findViewById(R.id.new_rule_from_port_max);
+        if (fromPortMaxText == null || fromPortMaxText.length() <= 0 || "0".equals(fromPortMaxText.getText())) {
+            ruleModel.setFromPortMax(0);
+        } else {
+            try {
+                if (RuleModelValidator.validateRuleFromPort(fromPortMaxText.getText().toString())) {
+                    int maxPort = Integer.valueOf(fromPortMaxText.getText().toString());
+                    if (maxPort < ruleModel.getFromPortMin()){
+                        fromPortMaxText.setError("maxport should be greater or equal to minport");
+                    } else {
+                        ruleModel.setFromPortMax(maxPort);
+                    }
+                }
+            } catch (RuleValidationException e) {
+                fromPortMaxText.setError(e.getMessage());
+            }
         }
 
         /*
@@ -236,7 +252,7 @@ public abstract class BaseRuleActivity extends BaseActivity {
         /*
             Target port
          */
-        TextInputEditText targetPortText = (TextInputEditText) findViewById(R.id.new_rule_target_port);
+        TextInputEditText targetPortText = (TextInputEditText) findViewById(R.id.new_rule_target_port_min);
 
         // Validate the input, and show error message if wrong
         try {
@@ -249,8 +265,9 @@ public abstract class BaseRuleActivity extends BaseActivity {
 
         if (targetIpAddress != null && targetIpAddress.length() > 0 && targetPort >= 0) {
             // Create a InetSocketAddress object using data
-            InetSocketAddress target = new InetSocketAddress(targetIpAddress, targetPort);
-            ruleModel.setTarget(target);
+            //InetSocketAddress target = new InetSocketAddress(targetIpAddress, targetPort);
+            ruleModel.setTargetIp(targetIpAddress);
+            ruleModel.setTargetPortMin(targetPort);
         } else {
             Log.w(TAG, "Could not create Target InetSocketAddress Object");
         }

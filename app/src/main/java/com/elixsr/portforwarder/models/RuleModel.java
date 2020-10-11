@@ -52,30 +52,34 @@ public class RuleModel implements Serializable {
     private String fromInterfaceName;
 
     @Expose
-    private int fromPort;
-
+    private int fromPortMin;
     @Expose
-    private InetSocketAddress target;
+    private int fromPortMax;
 
     private boolean isEnabled = true;
+
+    @Expose
+    private int targetPortMin;
+
+    @Expose
+    private String targetIp;
 
     // Null constructor - for object building
     public RuleModel() {
 
     }
 
-    public RuleModel(boolean isTcp, boolean isUdp, String name, String fromInterfaceName, int fromPort, InetSocketAddress target) {
+    public RuleModel(boolean isTcp, boolean isUdp, String name, String fromInterfaceName, int fromPortMin, int fromPortMax, String targetIp, int targetPortMin) {
         this.isTcp = isTcp;
         this.isUdp = isUdp;
         this.name = name;
         this.fromInterfaceName = fromInterfaceName;
-        this.fromPort = fromPort;
-        this.target = target;
+        this.fromPortMin = fromPortMin;
+        this.fromPortMax = fromPortMax;
+        this.targetIp = targetIp;
+        this.targetPortMin = targetPortMin;
     }
 
-    public RuleModel(boolean isTcp, boolean isUdp, String name, String fromInterfaceName, int fromPort, String targetIp, int targetPort) {
-        this(isTcp, isUdp, name, fromInterfaceName, fromPort, new InetSocketAddress(targetIp, targetPort));
-    }
 
     public long getId() {
         return id;
@@ -117,20 +121,31 @@ public class RuleModel implements Serializable {
         this.fromInterfaceName = fromInterfaceName;
     }
 
-    public int getFromPort() {
-        return fromPort;
+    public int getFromPortMin() {
+        return fromPortMin;
     }
 
-    public void setFromPort(int fromPort) {
-        this.fromPort = fromPort;
+    public void setFromPortMin(int fromPort) {
+        this.fromPortMin = fromPort;
     }
 
-    public InetSocketAddress getTarget() {
-        return target;
+    public int getFromPortMax() {
+        return fromPortMax;
     }
 
-    public void setTarget(InetSocketAddress target) {
-        this.target = target;
+    public void setFromPortMax(int fromPort) {
+        this.fromPortMax = fromPort;
+    }
+
+    public InetSocketAddress getTarget(int portOffset) {
+        return new InetSocketAddress(targetIp, targetPortMin + portOffset);
+    }
+
+    public void setTargetIp(String targetIp) {
+        this.targetIp = targetIp;
+    }
+    public void setTargetPortMin(int targetPortMin) {
+        this.targetPortMin = targetPortMin;
     }
 
     public String protocolToString() {
@@ -142,8 +157,8 @@ public class RuleModel implements Serializable {
      *
      * @return the IPv4 address as a String
      */
-    public String getTargetIpAddress() {
-        return this.target.getAddress().getHostAddress();
+    public String getTargetIp() {
+        return this.targetIp;
     }
 
     /**
@@ -151,8 +166,8 @@ public class RuleModel implements Serializable {
      *
      * @return the target port integer.
      */
-    public int getTargetPort() {
-        return this.target.getPort();
+    public int getTargetPortMin() {
+        return this.targetPortMin;
     }
 
     /**
@@ -182,13 +197,17 @@ public class RuleModel implements Serializable {
             return false;
         }
 
-        if (fromPort < RuleHelper.MIN_PORT_VALUE || fromPort > RuleHelper.MAX_PORT_VALUE) {
+        if (fromPortMin < RuleHelper.MIN_PORT_VALUE || fromPortMin > RuleHelper.MAX_PORT_VALUE) {
+            return false;
+        }
+
+        if (fromPortMax != 0 && (fromPortMin > fromPortMax || fromPortMax > RuleHelper.MAX_PORT_VALUE)) {
             return false;
         }
 
         try {
             // Ensure that the value is greater than the minimum, and smaller than max
-            if (getTargetPort() <= 0 || getTargetPort() < RuleHelper.TARGET_MIN_PORT || getTargetPort() > RuleHelper.MAX_PORT_VALUE) {
+            if (getTargetPortMin() <= 0 || getTargetPortMin() < RuleHelper.TARGET_MIN_PORT || getTargetPortMin() > RuleHelper.MAX_PORT_VALUE) {
                 return false;
             }
         } catch (NullPointerException e) {
@@ -198,7 +217,7 @@ public class RuleModel implements Serializable {
 
 
         // The new rule activity should take care of IP address validation
-        if (getTargetIpAddress() == null || name.length() <= 0) {
+        if (getTargetIp() == null || name.length() <= 0) {
             return false;
         }
 

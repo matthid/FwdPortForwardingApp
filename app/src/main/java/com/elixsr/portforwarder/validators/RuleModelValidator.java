@@ -26,10 +26,12 @@ public class RuleModelValidator implements Validator<RuleModel> {
         boolean isValidRuleModel = false;
 
         if (validateRuleName(ruleModel.getName()) &&
-                validateRuleFromPort(ruleModel.getFromPort()) &&
-                validateRuleTargetPort(ruleModel.getTargetPort()) &&
-                validateRuleTargetIpAddress(ruleModel.getTargetIpAddress()) &&
-                validateRuleTargetIpAddressSyntax(ruleModel.getTargetIpAddress())) {
+                validateRuleFromPort(ruleModel.getFromPortMin()) &&
+                (ruleModel.getFromPortMax() == 0 ||
+                        ruleModel.getFromPortMax() >= ruleModel.getFromPortMin() && validateRuleFromPort(ruleModel.getFromPortMax())) &&
+                validateRuleTargetPort(ruleModel.getTargetPortMin()) &&
+                validateRuleTargetIpAddress(ruleModel.getTargetIp()) &&
+                validateRuleTargetIpAddressSyntax(ruleModel.getTargetIp())) {
             isValidRuleModel = true;
         }
 

@@ -20,7 +20,7 @@ package com.elixsr.portforwarder;
 
 import android.app.Application;
 import android.content.Intent;
-import android.support.multidex.MultiDexApplication;
+import androidx.multidex.MultiDexApplication;
 import android.util.Log;
 
 import com.elixsr.portforwarder.forwarding.ForwardingService;

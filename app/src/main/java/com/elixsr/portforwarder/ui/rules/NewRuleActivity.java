@@ -20,7 +20,7 @@ package com.elixsr.portforwarder.ui.rules;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
+import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -99,7 +99,7 @@ public class NewRuleActivity extends BaseRuleActivity {
 
     private void saveNewRule() {
 
-        RuleModel ruleModel = generateNewRule();
+        RuleModel ruleModel = generateNewRule(0);
 
         if (ruleModel.isValid()) {
             Log.i(TAG, "Rule '" + ruleModel.getName() + "' is valid, time to save.");

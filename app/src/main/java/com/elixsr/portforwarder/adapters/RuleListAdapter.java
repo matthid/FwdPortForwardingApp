@@ -22,7 +22,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.preference.PreferenceManager;
-import android.support.v7.widget.RecyclerView;
+import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,9 +37,9 @@ import com.elixsr.portforwarder.forwarding.ForwardingManager;
 import com.elixsr.portforwarder.R;
 import com.elixsr.portforwarder.models.RuleModel;
 import com.elixsr.portforwarder.ui.rules.EditRuleActivity;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdSize;
-import com.google.android.gms.ads.AdView;
+//import com.google.android.gms.ads.AdRequest;
+//import com.google.android.gms.ads.AdSize;
+//import com.google.android.gms.ads.AdView;
 
 /**
  * Created by Niall McShane on 01/03/2016.
@@ -63,21 +63,21 @@ public class RuleListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         public AdViewHolder(View v) {
             super(v);
 
-            AdRequest request = new AdRequest.Builder()
-                    .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-                    .build();
-            AdView adView = new AdView(v.getContext());
-            adView.setAdSize(AdSize.SMART_BANNER);
+            //AdRequest request = new AdRequest.Builder()
+            //        .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+            //        .build();
+            //AdView adView = new AdView(v.getContext());
+            //adView.setAdSize(AdSize.SMART_BANNER);
 
             // Load ad type based on theme - dark or light
             if (PreferenceManager.getDefaultSharedPreferences(v.getContext())
                     .getBoolean(PREF_DARK_THEME, false)) {
-                adView.setAdUnitId(DARK_AD_ID);
+            //    adView.setAdUnitId(DARK_AD_ID);
             } else {
-                adView.setAdUnitId(LIGHT_AD_ID);
+            //    adView.setAdUnitId(LIGHT_AD_ID);
             }
-            ((LinearLayout) v).addView(adView, 1);
-            adView.loadAd(request);
+            //((LinearLayout) v).addView(adView, 1);
+            //adView.loadAd(request);
         }
     }
 
@@ -186,8 +186,18 @@ public class RuleListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                     ruleHolder.ruleProtocolText.setBackgroundResource(R.drawable.bg_red);
                 }
                 ruleHolder.ruleNameText.setText(ruleModel.getName());
-                ruleHolder.ruleFromPortText.setText(String.valueOf(ruleModel.getFromPort()));
-                ruleHolder.ruleTargetPortText.setText(String.valueOf(ruleModel.getTarget().getPort()));
+                String text = String.valueOf(ruleModel.getFromPortMin());
+                if (ruleModel.getFromPortMax() > ruleModel.getFromPortMin()){
+                    text += "-"  + String.valueOf(ruleModel.getFromPortMax());
+                }
+                ruleHolder.ruleFromPortText.setText(text);
+
+                text = String.valueOf(ruleModel.getTargetPortMin());
+                if (ruleModel.getFromPortMax() > ruleModel.getFromPortMin()) {
+                    int offset = ruleModel.getFromPortMax() - ruleModel.getFromPortMin();
+                    text += "-"  + String.valueOf(ruleModel.getTargetPortMin() + offset);
+                }
+                ruleHolder.ruleTargetPortText.setText(text);
                 break;
             case AD_VIEW:
                 AdViewHolder adHolder = (AdViewHolder) holder;

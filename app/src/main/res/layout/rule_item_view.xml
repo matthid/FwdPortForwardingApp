@@ -69,7 +69,7 @@
                 android:textSize="16sp"
                 tools:text="Test Rule" />
 
-            <android.support.v7.widget.LinearLayoutCompat
+            <androidx.appcompat.widget.LinearLayoutCompat
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content">
 
@@ -98,13 +98,13 @@
                     android:layout_marginStart="5dp"
                     tools:text="3001" />
 
-            </android.support.v7.widget.LinearLayoutCompat>
+            </androidx.appcompat.widget.LinearLayoutCompat>
 
         </LinearLayout>
 
     </RelativeLayout>
 
-    <!--<android.support.v7.widget.LinearLayoutCompat-->
+    <!--<androidx.appcompat.widget.LinearLayoutCompat-->
     <!--android:layout_width="match_parent"-->
     <!--android:layout_height="wrap_content"-->
     <!--android:layout_gravity="center"-->
@@ -127,7 +127,7 @@
     <!--android:layout_marginLeft="15dp"-->
     <!--android:layout_marginRight="15dp"/>-->
 
-    <!--<android.support.v7.widget.LinearLayoutCompat-->
+    <!--<androidx.appcompat.widget.LinearLayoutCompat-->
     <!--android:layout_width="wrap_content"-->
     <!--android:layout_height="wrap_content"-->
     <!--android:layout_marginRight="15dp"-->
@@ -141,7 +141,7 @@
     <!--android:textSize="16sp"-->
     <!--android:id="@+id/rule_item_name" />-->
 
-    <!--<android.support.v7.widget.LinearLayoutCompat-->
+    <!--<androidx.appcompat.widget.LinearLayoutCompat-->
     <!--android:layout_width="wrap_content"-->
     <!--android:layout_height="wrap_content">-->
 
@@ -167,11 +167,11 @@
     <!--android:layout_height="match_parent"-->
     <!--android:id="@+id/rule_item_target_port" />-->
 
-    <!--</android.support.v7.widget.LinearLayoutCompat>-->
+    <!--</androidx.appcompat.widget.LinearLayoutCompat>-->
 
-    <!--</android.support.v7.widget.LinearLayoutCompat>-->
+    <!--</androidx.appcompat.widget.LinearLayoutCompat>-->
 
-    <!--</android.support.v7.widget.LinearLayoutCompat>-->
+    <!--</androidx.appcompat.widget.LinearLayoutCompat>-->
 
     <View
         android:id="@+id/separator"

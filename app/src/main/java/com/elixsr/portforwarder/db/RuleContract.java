@@ -38,9 +38,10 @@ public class RuleContract {
         public static final String COLUMN_NAME_IS_TCP = "is_tcp";
         public static final String COLUMN_NAME_IS_UDP = "is_udp";
         public static final String COLUMN_NAME_FROM_INTERFACE_NAME = "from_interface_name";
-        public static final String COLUMN_NAME_FROM_PORT = "from_port";
+        public static final String COLUMN_NAME_FROM_PORT_MIN = "from_port_min";
+        public static final String COLUMN_NAME_FROM_PORT_MAX = "from_port_max";
         public static final String COLUMN_NAME_TARGET_IP_ADDRESS = "target_ip_address";
-        public static final String COLUMN_NAME_TARGET_PORT = "target_port";
+        public static final String COLUMN_NAME_TARGET_PORT_MIN = "target_port_min";
         public static final String COLUMN_NAME_IS_ENABLED = "is_enabled";
     }
 }

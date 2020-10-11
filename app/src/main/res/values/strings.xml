@@ -34,6 +34,8 @@
     <string name="select_rule_protocol">Protocol</string>
     <string name="new_rule_from">From</string>
     <string name="new_rule_port">Port</string>
+    <string name="new_rule_port_min">MinPort</string>
+    <string name="new_rule_port_max">MaxPort (optional)</string>
     <string name="new_rule_target">Target</string>
     <string name="new_rule_target_ip_address">Target IP Address</string>
 

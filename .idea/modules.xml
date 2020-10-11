@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/FwdPortForwardingApp.iml" filepath="$PROJECT_DIR$/FwdPortForwardingApp.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/FwdPortForwardingApp.iml" filepath="$PROJECT_DIR$/FwdPortForwardingApp.iml" group="FwdPortForwardingApp" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="FwdPortForwardingApp/app" />
     </modules>
   </component>
 </project>

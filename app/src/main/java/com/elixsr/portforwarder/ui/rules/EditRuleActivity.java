@@ -19,15 +19,17 @@
 package com.elixsr.portforwarder.ui.rules;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
-import android.support.design.widget.TextInputEditText;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.Toolbar;
+
+import com.elixsr.portforwarder.dao.RuleDao;
+import com.google.android.material.textfield.TextInputEditText;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -66,7 +68,6 @@ public class EditRuleActivity extends BaseRuleActivity {
 
     private long ruleModelId;
 
-    private SQLiteDatabase db;
     private Tracker tracker;
     private SwitchBar switchBar;
 
@@ -112,25 +113,10 @@ public class EditRuleActivity extends BaseRuleActivity {
         constructDetailUi();
 
         //TODO: move this
-        this.db = new RuleDbHelper(this).getReadableDatabase();
+        RuleDao dao = new RuleDao(new RuleDbHelper(this));
+        this.ruleModel = dao.getRule(ruleModelId);
 
-        Cursor cursor = db.query(
-                RuleContract.RuleEntry.TABLE_NAME,
-                RuleDbHelper.generateAllRowsSelection(),
-                RuleContract.RuleEntry.COLUMN_NAME_RULE_ID + "=?",
-                new String[]{String.valueOf(ruleModelId)},
-                null,
-                null,
-                null
-        );
-
-        cursor.moveToFirst();
-
-        this.ruleModel = RuleHelper.cursorToRuleModel(cursor);
         Log.i(TAG, Boolean.toString(ruleModel.isEnabled()));
-        // Close the DB
-        cursor.close();
-        db.close();
 
         // Set up the switchBar for enabling/disabling
         switchBar = (SwitchBar) findViewById(R.id.switch_bar);
@@ -142,14 +128,23 @@ public class EditRuleActivity extends BaseRuleActivity {
         TextInputEditText newRuleNameEditText = (TextInputEditText) findViewById(R.id.new_rule_name);
         newRuleNameEditText.setText(ruleModel.getName());
 
-        TextInputEditText newRuleFromPortEditText = (TextInputEditText) findViewById(R.id.new_rule_from_port);
-        newRuleFromPortEditText.setText(String.valueOf(ruleModel.getFromPort()));
+        TextInputEditText newRuleFromPortMinEditText = (TextInputEditText) findViewById(R.id.new_rule_from_port_min);
+        int minPort = ruleModel.getFromPortMin();
+        newRuleFromPortMinEditText.setText(String.valueOf(minPort));
+
+        TextInputEditText newRuleFromPortMaxEditText = (TextInputEditText) findViewById(R.id.new_rule_from_port_max);
+        int maxPort = ruleModel.getFromPortMax();
+        if (maxPort == 0 || maxPort == minPort){
+            newRuleFromPortMaxEditText.setText("");
+        } else {
+            newRuleFromPortMaxEditText.setText(String.valueOf(maxPort));
+        }
 
         TextInputEditText newRuleTargetIpAddressEditText = (TextInputEditText) findViewById(R.id.new_rule_target_ip_address);
-        newRuleTargetIpAddressEditText.setText(ruleModel.getTargetIpAddress());
+        newRuleTargetIpAddressEditText.setText(ruleModel.getTargetIp());
 
-        TextInputEditText newRuleTargetPortEditText = (TextInputEditText) findViewById(R.id.new_rule_target_port);
-        newRuleTargetPortEditText.setText(String.valueOf(ruleModel.getTargetPort()));
+        TextInputEditText newRuleTargetPortEditText = (TextInputEditText) findViewById(R.id.new_rule_target_port_min);
+        newRuleTargetPortEditText.setText(String.valueOf(ruleModel.getTargetPortMin()));
 
         /*
         Set the spinners content
@@ -201,7 +196,7 @@ public class EditRuleActivity extends BaseRuleActivity {
     }
 
     private void saveEditedRule() {
-        this.ruleModel = generateNewRule();
+        this.ruleModel = generateNewRule(ruleModelId);
 
         if (ruleModel.isValid()) {
             // Determine if rule is enabled
@@ -212,23 +207,10 @@ public class EditRuleActivity extends BaseRuleActivity {
 
             Log.i(TAG, "Is enabled is: " + this.ruleModel.isEnabled());
 
-            // New model to store
-            ContentValues values = RuleHelper.ruleModelToContentValues(this.ruleModel);
 
-            // Which row to update, based on the ID
-            String selection = RuleContract.RuleEntry.COLUMN_NAME_RULE_ID + "=?";
-            String[] selectionArgs = {String.valueOf(this.ruleModelId)};
+            RuleDao dao = new RuleDao(new RuleDbHelper(this));
+            dao.updateRule(this.ruleModel);
 
-            this.db = new RuleDbHelper(this).getReadableDatabase();
-
-            int count = db.update(
-                    RuleContract.RuleEntry.TABLE_NAME,
-                    values,
-                    selection,
-                    selectionArgs);
-
-            // Close db
-            db.close();
 
             // Build and send an Event.
             tracker.send(new HitBuilders.EventBuilder()
@@ -251,6 +233,7 @@ public class EditRuleActivity extends BaseRuleActivity {
 
     private void deleteRule() {
 
+        Context ctx = this;
         new AlertDialog.Builder(this)
                 .setTitle(R.string.alert_dialog_delete_entry_title)
                 .setMessage(R.string.alert_dialog_delete_entry_text)
@@ -264,17 +247,8 @@ public class EditRuleActivity extends BaseRuleActivity {
                         // MainActivity.ruleListAdapter.notifyItemRemoved(ruleModelLocation);
 
                         //construct the db
-                        db = new RuleDbHelper(getBaseContext()).getReadableDatabase();
-
-                        // Define 'where' part of query.
-                        String selection = RuleContract.RuleEntry.COLUMN_NAME_RULE_ID + "=?";
-                        // Specify arguments in placeholder order.
-                        String[] selectionArgs = {String.valueOf(ruleModelId)};
-                        // Issue SQL statement.
-                        db.delete(RuleContract.RuleEntry.TABLE_NAME, selection, selectionArgs);
-
-                        // Close the db
-                        db.close();
+                        RuleDao dao = new RuleDao(new RuleDbHelper(ctx));
+                        dao.deleteRule(ruleModelId);
 
                         // Build and send an Event.
                         tracker.send(new HitBuilders.EventBuilder()

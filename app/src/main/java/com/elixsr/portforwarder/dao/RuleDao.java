@@ -21,6 +21,7 @@ package com.elixsr.portforwarder.dao;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -29,6 +30,8 @@ import com.elixsr.portforwarder.db.RuleContract;
 import com.elixsr.portforwarder.db.RuleDbHelper;
 import com.elixsr.portforwarder.models.RuleModel;
 import com.elixsr.portforwarder.util.RuleHelper;
+
+import static com.facebook.GraphRequest.TAG;
 
 /**
  * The {@link RuleDao} class provides common functionality for Rule database access.
@@ -40,15 +43,9 @@ import com.elixsr.portforwarder.util.RuleHelper;
  */
 public class RuleDao {
 
-    private SQLiteDatabase db;
     private RuleDbHelper ruleDbHelper;
 
     public RuleDao(RuleDbHelper ruleDbHelper) {
-        this.ruleDbHelper = ruleDbHelper;
-    }
-
-    public RuleDao(SQLiteDatabase sqLiteDatabase, RuleDbHelper ruleDbHelper) {
-        this.db = sqLiteDatabase;
         this.ruleDbHelper = ruleDbHelper;
     }
 
@@ -60,16 +57,47 @@ public class RuleDao {
      */
     public long insertRule(RuleModel ruleModel) {
         // Gets the data repository in write mode
-        this.db = ruleDbHelper.getWritableDatabase();
+        try(SQLiteDatabase db = ruleDbHelper.getWritableDatabase())
+        {
+            ContentValues constantValues = RuleHelper.ruleModelToContentValues(ruleModel);
 
-        ContentValues constantValues = RuleHelper.ruleModelToContentValues(ruleModel);
+            long newRowId = db.insert(
+                    RuleContract.RuleEntry.TABLE_NAME,
+                    null,
+                    constantValues);
 
-        long newRowId = db.insert(
-                RuleContract.RuleEntry.TABLE_NAME,
-                null,
-                constantValues);
+            ruleModel.setId(newRowId);
+            Log.i(TAG, "Rule #" + newRowId + "(" + ruleModel.getName() + ") inserted to database. "
+                    + ruleModel.getFromInterfaceName() + "(" + ruleModel.getFromPortMin() + "-" + ruleModel.getFromPortMax() + " >> "
+                    + ruleModel.getTargetIp() + "(" + ruleModel.getTargetPortMin() + "-max) ..." + constantValues.toString());
 
-        return newRowId;
+            return newRowId;
+        }
+    }
+
+    public void updateRule(RuleModel ruleModel) {
+        try (SQLiteDatabase db = ruleDbHelper.getReadableDatabase()) {
+
+            // New model to store
+            ContentValues values = RuleHelper.ruleModelToContentValues(ruleModel);
+
+            // Which row to update, based on the ID
+            String selection = RuleContract.RuleEntry.COLUMN_NAME_RULE_ID + "=?";
+            String[] selectionArgs = {String.valueOf(ruleModel.getId())};
+            int count = db.update(
+                    RuleContract.RuleEntry.TABLE_NAME,
+                    values,
+                    selection,
+                    selectionArgs);
+
+            Log.i(TAG, "Rule #" + ruleModel.getId() + "(" + ruleModel.getName() + ") updated in the database. "
+                    + ruleModel.getFromInterfaceName() + "(" + ruleModel.getFromPortMin() + "-" + ruleModel.getFromPortMax() + " >> "
+                    + ruleModel.getTargetIp() + "(" + ruleModel.getTargetPortMin() + "-max) ..." + values.toString());
+
+            // Close db
+            db.close();
+        }
+
     }
 
     /**
@@ -82,36 +110,42 @@ public class RuleDao {
         List<RuleModel> ruleModels = new LinkedList<RuleModel>();
 
         // Gets the data repository in read mode
-        this.db = ruleDbHelper.getReadableDatabase();
+        try (SQLiteDatabase db = ruleDbHelper.getReadableDatabase()) {
 
-        // Define a projection that specifies which columns from the database
-        // you will actually use after this query.
-        String[] projection = RuleDbHelper.generateAllRowsSelection();
+            // Define a projection that specifies which columns from the database
+            // you will actually use after this query.
+            String[] projection = RuleDbHelper.generateAllRowsSelection();
 
-        // How you want the results sorted in the resulting Cursor
-        String sortOrder =
-                RuleContract.RuleEntry.COLUMN_NAME_RULE_ID + " DESC";
+            // How you want the results sorted in the resulting Cursor
+            String sortOrder =
+                    RuleContract.RuleEntry.COLUMN_NAME_RULE_ID + " DESC";
 
-        Cursor cursor = db.query(
-                RuleContract.RuleEntry.TABLE_NAME,          // The table to query
-                projection,                                 // The columns to return
-                null,                                       // The columns for the WHERE clause
-                null,                                       // The values for the WHERE clause
-                null,                                       // don't group the rows
-                null,                                       // don't filter by row groups
-                sortOrder                                   // The sort order
-        );
+            Cursor cursor = db.query(
+                    RuleContract.RuleEntry.TABLE_NAME,          // The table to query
+                    projection,                                 // The columns to return
+                    null,                                       // The columns for the WHERE clause
+                    null,                                       // The values for the WHERE clause
+                    null,                                       // don't group the rows
+                    null,                                       // don't filter by row groups
+                    sortOrder                                   // The sort order
+            );
 
-        cursor.moveToFirst();
-        while (!cursor.isAfterLast()) {
-            RuleModel ruleModel = RuleHelper.cursorToRuleModel(cursor);
-            ruleModels.add(ruleModel);
-            cursor.moveToNext();
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()) {
+                RuleModel ruleModel = RuleHelper.cursorToRuleModel(cursor);
+                ruleModels.add(ruleModel);
+
+                Log.i(TAG, "Rule #" + ruleModel.getId() + "(" + ruleModel.getName() + ") read from database. "
+                        + ruleModel.getFromInterfaceName() + "(" + ruleModel.getFromPortMin() + "-" + ruleModel.getFromPortMax() + " >> "
+                        + ruleModel.getTargetIp() + "(" + ruleModel.getTargetPortMin() + "-max) ...");
+
+                cursor.moveToNext();
+            }
+            // make sure to close the cursor
+            cursor.close();
+
+            return ruleModels;
         }
-        // make sure to close the cursor
-        cursor.close();
-
-        return ruleModels;
     }
 
     public List<RuleModel> getAllEnabledRuleModels() {
@@ -127,5 +161,50 @@ public class RuleDao {
         }
 
         return enabledRuleModels;
+    }
+
+    public RuleModel getRule(long ruleModelId) {
+
+        try (SQLiteDatabase db = ruleDbHelper.getReadableDatabase()) {
+
+            Cursor cursor = db.query(
+                    RuleContract.RuleEntry.TABLE_NAME,
+                    RuleDbHelper.generateAllRowsSelection(),
+                    RuleContract.RuleEntry.COLUMN_NAME_RULE_ID + "=?",
+                    new String[]{String.valueOf(ruleModelId)},
+                    null,
+                    null,
+                    null
+            );
+
+            cursor.moveToFirst();
+
+            RuleModel ruleModel = RuleHelper.cursorToRuleModel(cursor);
+
+            Log.i(TAG, "Rule #" + ruleModel.getId() + "(" + ruleModel.getName() + ") read from database. "
+                    + ruleModel.getFromInterfaceName() + "(" + ruleModel.getFromPortMin() + "-" + ruleModel.getFromPortMax() + " >> "
+                    + ruleModel.getTargetIp() + "(" + ruleModel.getTargetPortMin() + "-max) ...");
+
+            // Close the DB
+            cursor.close();
+            //db.close();
+
+            return ruleModel;
+        }
+
+    }
+
+    public void deleteRule(long ruleModelId) {
+        try (SQLiteDatabase db = ruleDbHelper.getReadableDatabase()) {
+
+            // Define 'where' part of query.
+            String selection = RuleContract.RuleEntry.COLUMN_NAME_RULE_ID + "=?";
+            // Specify arguments in placeholder order.
+            String[] selectionArgs = {String.valueOf(ruleModelId)};
+            // Issue SQL statement.
+            db.delete(RuleContract.RuleEntry.TABLE_NAME, selection, selectionArgs);
+
+            Log.i(TAG, "Rule #" + ruleModelId + " deleted from database...");
+        }
     }
 }

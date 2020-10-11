@@ -70,9 +70,10 @@ public class RuleHelper {
         contentValues.put(RuleContract.RuleEntry.COLUMN_NAME_IS_TCP, ruleModel.isTcp());
         contentValues.put(RuleContract.RuleEntry.COLUMN_NAME_IS_UDP, ruleModel.isUdp());
         contentValues.put(RuleContract.RuleEntry.COLUMN_NAME_FROM_INTERFACE_NAME, ruleModel.getFromInterfaceName());
-        contentValues.put(RuleContract.RuleEntry.COLUMN_NAME_FROM_PORT, ruleModel.getFromPort());
-        contentValues.put(RuleContract.RuleEntry.COLUMN_NAME_TARGET_IP_ADDRESS, ruleModel.getTargetIpAddress());
-        contentValues.put(RuleContract.RuleEntry.COLUMN_NAME_TARGET_PORT, ruleModel.getTargetPort());
+        contentValues.put(RuleContract.RuleEntry.COLUMN_NAME_FROM_PORT_MIN, ruleModel.getFromPortMin());
+        contentValues.put(RuleContract.RuleEntry.COLUMN_NAME_FROM_PORT_MAX, ruleModel.getFromPortMax());
+        contentValues.put(RuleContract.RuleEntry.COLUMN_NAME_TARGET_IP_ADDRESS, ruleModel.getTargetIp());
+        contentValues.put(RuleContract.RuleEntry.COLUMN_NAME_TARGET_PORT_MIN, ruleModel.getTargetPortMin());
         contentValues.put(RuleContract.RuleEntry.COLUMN_NAME_IS_ENABLED, ruleModel.isEnabled());
 
         return contentValues;
@@ -94,9 +95,11 @@ public class RuleHelper {
         ruleModel.setIsTcp(cursor.getInt(2) != 0);
         ruleModel.setIsUdp(cursor.getInt(3) != 0);
         ruleModel.setFromInterfaceName(cursor.getString(4));
-        ruleModel.setFromPort(cursor.getInt(5));
-        ruleModel.setTarget(new InetSocketAddress(cursor.getString(6), cursor.getInt(7)));
-        ruleModel.setEnabled(cursor.getInt(8) != 0);
+        ruleModel.setFromPortMin(cursor.getInt(5));
+        ruleModel.setFromPortMax(cursor.getInt(6));
+        ruleModel.setTargetIp(cursor.getString(7));
+        ruleModel.setTargetPortMin(cursor.getInt(8));
+        ruleModel.setEnabled(cursor.getInt(9) != 0);
 
         return ruleModel;
     }
